@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+include setup.py
+graft harness
+graft tasks
+graft heldout
+include CLAUDE.md
+include AGENTS.md
+include orchestrator-pipeline-plan.md
+include state/STATE.md
