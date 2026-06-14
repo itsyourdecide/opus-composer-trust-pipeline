@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ophar"
+version = "0.1.0"
+description = "Ophar — Opus plans, Composer builds, Harness verifies. Ground-truth verdicts, never executor self-report."
+license = "MIT"
+requires-python = ">=3.11"
+readme = "README.md"
+dependencies = [
+    "typer>=0.15",
+    "rich>=13",
+    "httpx>=0.28",
+    "mcp>=1.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "pydantic>=2.0",
+    "websockets>=13",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+opctl = "cli.main:app"
+ophar-mcp = "ophar.mcp_entry:main"
+ophar-setup = "ophar.setup_cmd:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cli", "cli.*", "server", "server.*", "ophar", "ophar.*"]

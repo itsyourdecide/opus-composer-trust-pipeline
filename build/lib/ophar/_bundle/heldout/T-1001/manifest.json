@@ -1,0 +1,8 @@
+{
+  "set": "T-1001",
+  "description": "Held-out checks for median() — unseen random inputs + order-invariance + even-length defining property + bounds.",
+  "place": [
+    { "from": "test_heldout_signals.py", "to": "tests/test_heldout_signals.py" }
+  ],
+  "cmd": "${HELDOUT_PYTEST:-python3 -m pytest} -q tests/test_heldout_signals.py"
+}

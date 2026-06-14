@@ -1,0 +1,26 @@
+# transient orchestration artifacts
+/runs/
+# Per-run dispatch artifacts: mcp_server.py writes a timestamped task spec + held-out set
+# for every dispatch (task_id = T-YYYYMMDD-HHMMSS-XXXX). They pile up and aren't worth
+# committing. The short-named fixtures the gates depend on (tasks T-0001/0002/1002,
+# held-out sets T-0002/T-1001/T-RESERVE-DEMO) don't match this glob, so they stay tracked.
+/tasks/T-20*.json
+/heldout/T-20*/
+# runtime state: ledger journal + Opus-refined specs + reconcile output (per-run).
+# STATE.md is authored/persistent (the §4 soft state) — keep it tracked.
+/state/*
+!/state/STATE.md
+# executor worktrees live outside the repo, but ignore any stray ones
+/.worktrees/
+# the toy target projects are their own git repos; don't nest them
+/sandbox/
+/sandbox-py/
+node_modules/
+# Python build/runtime junk
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+# local Claude Code settings — machine-specific, not shared
+/.claude/settings.local.json

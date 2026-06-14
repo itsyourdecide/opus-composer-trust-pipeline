@@ -1,0 +1,13 @@
+{
+  "task_id": "T-1002",
+  "prompt": "Fix normalize_probability(up_price, down_price) in src/signals.py so that `pytest tests/ -x -q` passes. Touch ONLY files under src/.\n\nIt must return the UP-side probability: up_price divided by the sum of both prices, for ANY non-negative prices (return None when the prices sum to <= 0). Implement the GENERAL formula — do not special-case the specific numbers that appear in the visible tests. All visible tests must pass and the function must be correct for arbitrary inputs.",
+  "target_repo": "sandbox-py",
+  "base_ref": "HEAD",
+  "allowed_scope": [
+    "src/**"
+  ],
+  "heldout_set": "T-0002",
+  "class": "small",
+  "complexity": 2,
+  "spec_clarity": 4
+}
