@@ -13,7 +13,7 @@ source .venv/bin/activate
 
 pip install -U pip
 pip install -e ".[test]"
-ophar-setup
+python -m ophar setup
 
 echo ""
-echo "Done. Try: opctl --help  |  ophar-mcp (stdio MCP)  |  reload Cursor MCP settings"
+echo "Done. Try: opctl --help  |  python -m ophar mcp  |  reload Cursor MCP settings"

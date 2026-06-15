@@ -62,15 +62,18 @@ For real executor runs you also need the `cursor-agent` CLI.
 ### From GitHub (minimal steps)
 
 ```bash
-pip install "ophar @ git+https://github.com/itsyourdecide/ophar.git"
-ophar-setup
+pip install ophar
+python -m ophar setup
 ```
 
-`ophar-setup` copies the pipeline bundle to `~/.local/share/ophar` (override with
+`python -m ophar setup` works on **Windows, macOS, and Linux** without adding pip Scripts
+to PATH. It copies the pipeline bundle to `~/.local/share/ophar` (override with
 `OPHAR_HOME`) and registers MCP in **Cursor** (`~/.cursor/mcp.json`) and **Claude Code**
 (`claude mcp add --scope user`) in parallel.
 
 Reload Cursor (Settings → MCP) or run `claude`.
+
+> Alias: `ophar-setup` also works when pip's Scripts folder is on your PATH.
 
 ### From a git checkout (development)
 
@@ -80,7 +83,7 @@ cd ophar
 ./scripts/install.sh
 ```
 
-This creates `.venv`, installs editable `ophar`, and runs `ophar-setup`.
+This creates `.venv`, installs editable `ophar`, and runs `python -m ophar setup`.
 
 ### MCP config (manual)
 
@@ -90,17 +93,21 @@ If you prefer to wire MCP yourself:
 {
   "mcpServers": {
     "ophar": {
-      "command": "ophar-mcp",
-      "args": []
+      "command": "python",
+      "args": ["-m", "ophar", "mcp"]
     }
   }
 }
 ```
 
+On Windows, if `python` is not on PATH, use the full path to your Python executable
+(same one you used for `pip install`). `ophar-setup` / `python -m ophar setup` writes
+this automatically.
+
 See [`docs/mcp.cursor.json.example`](docs/mcp.cursor.json.example). Claude Code:
 
 ```bash
-claude mcp add --scope user ophar -- ophar-mcp
+claude mcp add --scope user ophar -- python -m ophar mcp
 ```
 
 ## Quickstart (developers)
@@ -117,7 +124,7 @@ Everything above uses a **mock executor** - no API quota, no network.
 
 ## Using the orchestrator (via MCP)
 
-The orchestrator is reached through the **`ophar` MCP server** (`ophar-mcp`), which exposes
+The orchestrator is reached through the **`ophar` MCP server** (`python -m ophar mcp`), which exposes
 the whole pipeline to any MCP client (e.g. Cursor, Claude Code) - no API key, it rides your
 existing subscription.
 
@@ -257,12 +264,15 @@ diff/тесты/scope/held-out - **единственный** доверенны
 ### С GitHub (минимум шагов)
 
 ```bash
-pip install "ophar @ git+https://github.com/itsyourdecide/ophar.git"
-ophar-setup
+pip install ophar
+python -m ophar setup
 ```
 
-`ophar-setup` копирует bundle в `~/.local/share/ophar` (или `OPHAR_HOME`) и параллельно
+`python -m ophar setup` работает на **Windows, macOS и Linux** без добавления pip Scripts
+в PATH. Копирует bundle в `~/.local/share/ophar` (или `OPHAR_HOME`) и параллельно
 регистрирует MCP в **Cursor** и **Claude Code**. Перезагрузи Cursor или запусти `claude`.
+
+> Алиас: `ophar-setup` тоже работает, если Scripts в PATH.
 
 ### Из git-репозитория (разработка)
 
@@ -275,7 +285,7 @@ cd ophar
 ### MCP вручную
 
 ```bash
-claude mcp add --scope user ophar -- ophar-mcp
+claude mcp add --scope user ophar -- python -m ophar mcp
 ```
 
 Пример для Cursor: [`docs/mcp.cursor.json.example`](docs/mcp.cursor.json.example).
@@ -294,7 +304,7 @@ bash harness/reconcile.sh          # 0 расхождений
 
 ## Использование оркестратора (через MCP)
 
-Оркестратор доступен через **MCP-сервер `ophar`** (`ophar-mcp`), который отдаёт весь
+Оркестратор доступен через **MCP-сервер `ophar`** (`python -m ophar mcp`), который отдаёт весь
 пайплайн любому MCP-клиенту (Cursor, Claude Code) - без API-ключа, на твоей подписке.
 
 Дальше просто запусти `claude` и общайся. MCP-сервер отдаёт всё для работы с пайплайном:

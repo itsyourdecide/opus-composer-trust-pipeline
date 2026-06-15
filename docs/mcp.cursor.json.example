@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "ophar": {
-      "command": "ophar-mcp",
-      "args": []
+      "command": "python",
+      "args": ["-m", "ophar", "mcp"]
     }
   }
 }

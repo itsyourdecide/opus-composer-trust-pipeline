@@ -5,9 +5,9 @@ MCP stdio server — exposes run_in_composer as a tool for Claude Code (subscrip
 Claude Code calls this tool; the server runs orchestrate.sh and returns ground truth.
 No API key needed — auth is handled by the Claude Code CLI session.
 
-Register once (after pip install + ophar-setup, or from a git checkout):
+Register once (after pip install + python -m ophar setup, or from a git checkout):
 
-    claude mcp add --scope user ophar -- ophar-mcp
+    claude mcp add --scope user ophar -- python -m ophar mcp
 
 Manual path (development):
 
