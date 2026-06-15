@@ -116,7 +116,7 @@ After install:
 
 ```bash
 bash scripts/setup-fixtures.sh     # build the toy target repos (sandbox/, sandbox-py/)
-for t in tests/*.sh; do bash "$t"; done   # 11 gates, all green on the mock (zero quota)
+for t in tests/*.sh; do bash "$t"; done   # 12 gates, all green on the mock (zero quota)
 bash harness/reconcile.sh          # 0 discrepancies
 ```
 
@@ -128,8 +128,10 @@ The orchestrator is reached through the **`ophar` MCP server** (`python -m ophar
 the whole pipeline to any MCP client (e.g. Cursor, Claude Code) - no API key, it rides your
 existing subscription.
 
-- **tools** - `init_repo` (scaffold a target repo) and `run_in_composer` (dispatch + get
-  verified ground truth back);
+- **tools** - `init_repo` (scaffold a target repo), `run_in_composer` (dispatch + get
+  verified ground truth back), and `query_repo` (optional: ask a [graphify](https://pypi.org/project/graphifyy/)
+  knowledge-graph index of the target repo instead of reading files — keeps the
+  orchestrator's context thin; degrades gracefully when graphify isn't installed);
 - **instructions** - the orchestrator's operating manual (role, trust boundary, how to
   author specs and held-out checks), auto-injected into the session;
 - **resources** - `pipeline://state`, `pipeline://discipline`, `pipeline://plan`,
@@ -201,7 +203,7 @@ harness/        the pipeline glue (bash) + mcp_server.py (the MCP orchestrator)
   lib/          mock executor + mock claude (for zero-quota gates)
 cli/            opctl - Typer CLI
 server/         FastAPI server (routers, serial dispatch worker, registry)
-tests/          11 gate scripts (run on the mock)
+tests/          12 gate scripts (run on the mock)
 tasks/          committed task-spec fixtures (T-0001/0002/1002)
 heldout/        committed held-out fixtures (§9)
 state/          STATE.md (soft state) + runtime ledger (gitignored)
@@ -320,7 +322,7 @@ claude mcp add --scope user ophar -- python -m ophar mcp
 
 ```bash
 bash scripts/setup-fixtures.sh     # создать игрушечные репо-цели (sandbox/, sandbox-py/)
-for t in tests/*.sh; do bash "$t"; done   # 11 гейтов, все зелёные на моке (без quota)
+for t in tests/*.sh; do bash "$t"; done   # 12 гейтов, все зелёные на моке (без quota)
 bash harness/reconcile.sh          # 0 расхождений
 ```
 
@@ -333,8 +335,10 @@ bash harness/reconcile.sh          # 0 расхождений
 
 Дальше просто запусти `claude` и общайся. MCP-сервер отдаёт всё для работы с пайплайном:
 
-- **tools** - `init_repo` (создать репо-цель) и `run_in_composer` (диспатч + проверенная
-  ground truth обратно);
+- **tools** - `init_repo` (создать репо-цель), `run_in_composer` (диспатч + проверенная
+  ground truth обратно) и `query_repo` (опционально: спросить индекс-граф
+  [graphify](https://pypi.org/project/graphifyy/) целевого репо вместо чтения файлов —
+  держит контекст оркестратора тонким; мягко деградирует, если graphify не установлен);
 - **instructions** - операционный мануал оркестратора (роль, граница доверия, как писать
   спеки и held-out), автоматически вшивается в сессию;
 - **resources** - `pipeline://state`, `pipeline://discipline`, `pipeline://plan`,

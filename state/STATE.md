@@ -24,7 +24,7 @@ What exists:
   `pipeline://` resources. This is the conversational entry point — no API key needed.
 - **CLI + API server** (`cli/`, `server/`): `opctl` for tasks/metrics/settings and a
   FastAPI server with a strictly serial dispatch worker.
-- **Gate suite** (`tests/*.sh`): 11 gates, all green on the mock.
+- **Gate suite** (`tests/*.sh`): 12 gates, all green on the mock.
 
 ## First-run setup
 

@@ -21,7 +21,7 @@ cat > "$TMP/STATE-honest.md" <<'MD'
 [
   {"kind":"file","path":"harness/reconcile.sh","contains":"discrepancies"},
   {"kind":"file","path":"harness/verdict.sh","contains":"block"},
-  {"kind":"git","repo":".","grep":"Narrow slice"}
+  {"kind":"git","repo":".","grep":"Initial commit"}
 ]
 ```
 MD

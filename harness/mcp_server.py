@@ -31,6 +31,26 @@ from mcp.server.models import InitializationOptions
 
 from ophar.paths import get_root
 
+# Optional Level-2 retrieval layer. This file is loaded via spec_from_file_location (not as
+# part of an importable `harness` package), so the sibling bridge is loaded by path next to
+# this file. Done defensively: a broken/missing bridge leaves graphify_bridge=None and the
+# graphify tools simply report "unavailable" — the pipeline runs exactly as before.
+def _load_graphify_bridge():
+    import importlib.util as _ilu
+    try:
+        path = Path(__file__).resolve().parent / "graphify_bridge.py"
+        spec = _ilu.spec_from_file_location("ophar_graphify_bridge", path)
+        if spec and spec.loader:
+            mod = _ilu.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+graphify_bridge = _load_graphify_bridge()
+
 server = Server("ophar")
 
 
@@ -100,9 +120,24 @@ executor's narrative, that is the exact trust leak this pipeline exists to preve
 Read resource `pipeline://state` first to rehydrate live state. If anything looks
 stale, say so before acting on it.
 
+## Understand the target repo cheaply (do this BEFORE reading files)
+Reading files wholesale burns your context — the one thing this pipeline keeps thin. If a
+graph index exists, ASK it instead:
+- query_repo(target_repo, question): comprehension over a prebuilt knowledge graph, far
+  cheaper than opening files. Use mode="affected" with a symbol to get its blast radius —
+  that directly tells you the narrowest correct allowed_scope for run_in_composer.
+- The graph is a NAVIGATION hint (edges are INFERRED/AMBIGUOUS). Use it to decide WHERE to
+  look and HOW to scope — NEVER as a verdict. Acceptance still comes only from ground truth.
+- If query_repo reports no_index, call init_repo(path, index=true) once to build it (or tell
+  the user to run `/graphify <path>`). If it reports unavailable, just read files normally —
+  graphify is optional.
+
 ## Tools
-- init_repo(path, lang): create/reuse a git repo so it's a valid target_repo. Call this
-  FIRST when target_repo doesn't exist or has no commits. Idempotent.
+- init_repo(path, lang, index): create/reuse a git repo so it's a valid target_repo. Call
+  this FIRST when target_repo doesn't exist or has no commits. Idempotent. Pass index=true to
+  build/refresh a graphify index for the repo (optional, best-effort).
+- query_repo(target_repo, question, mode): query the repo's graphify index (mode "query" or
+  "affected"); cheap comprehension/scoping. Optional — degrades gracefully if no graph.
 - run_in_composer(...): dispatch a coding task; returns ground truth only. Author:
   - prompt: imperative, states WHAT must be true after the fix.
   - allowed_scope: narrowest globs (e.g. ["src/**"]) — enforced structurally.
@@ -266,8 +301,12 @@ _SCAFFOLDS: dict[str, dict[str, str]] = {
 }
 
 
-def _init_repo(path: str, lang: str = "python") -> dict:
-    """Create a git repo at path with minimal scaffold. Idempotent if already a repo."""
+def _init_repo(path: str, lang: str = "python", index: bool = False) -> dict:
+    """Create a git repo at path with minimal scaffold. Idempotent if already a repo.
+
+    When index=true and graphify is available, build/refresh a graphify index for the repo
+    (best-effort, never fatal) so the orchestrator can query it instead of reading files.
+    """
     repo = Path(path)
     repo.mkdir(parents=True, exist_ok=True)
 
@@ -302,7 +341,7 @@ def _init_repo(path: str, lang: str = "python") -> dict:
 
     # Confirm HEAD exists
     head = git("rev-parse", "HEAD")
-    return {
+    result = {
         "path": str(repo),
         "lang": lang,
         "already_existed": is_git,
@@ -310,6 +349,22 @@ def _init_repo(path: str, lang: str = "python") -> dict:
         "head": head.stdout.strip(),
         "ready": head.returncode == 0,
     }
+
+    # Optional Level-2 retrieval index. Best-effort: a graphify failure never fails init_repo.
+    if index and graphify_bridge is not None:
+        result["graph"] = graphify_bridge.ensure_index(repo)
+    elif index:
+        result["graph"] = {"status": "unavailable", "hint": "graphify bridge not loaded"}
+
+    return result
+
+
+def _query_repo(target_repo: str, question: str, mode: str = "query",
+                budget: int = 1500, depth: int = 2) -> dict:
+    """Query the target repo's graphify index (best-effort, never raises)."""
+    if graphify_bridge is None:
+        return {"status": "unavailable", "hint": "graphify bridge not loaded"}
+    return graphify_bridge.query(target_repo, question, budget=budget, mode=mode, depth=depth)
 
 
 # ── resources (live pipeline context, read on demand) ────────────────────────
@@ -371,6 +426,61 @@ async def list_tools() -> list[types.Tool]:
                         "description": "Scaffold language: 'python' (default) or 'node'.",
                         "default": "python",
                     },
+                    "index": {
+                        "type": "boolean",
+                        "description": (
+                            "Build/refresh a graphify knowledge-graph index for the repo "
+                            "(optional, best-effort). Lets the orchestrator query the repo "
+                            "instead of reading files. Initial build needs a graphify LLM "
+                            "backend and runs in the background."
+                        ),
+                        "default": False,
+                    },
+                },
+            },
+        ),
+        types.Tool(
+            name="query_repo",
+            description=(
+                "Query the target repo's graphify knowledge-graph index — cheap comprehension "
+                "and scoping that avoids reading files wholesale (keeps the orchestrator's "
+                "context thin). mode='query' answers a question by graph traversal; "
+                "mode='affected' returns the blast radius of a symbol (use it to pick the "
+                "narrowest allowed_scope). The graph is a navigation hint, never a ground-truth "
+                "signal. Degrades gracefully: reports 'no_index' or 'unavailable' instead of "
+                "failing when there is no graph."
+            ),
+            inputSchema={
+                "type": "object",
+                "required": ["target_repo", "question"],
+                "properties": {
+                    "target_repo": {
+                        "type": "string",
+                        "description": "Absolute path to the target git repository.",
+                    },
+                    "question": {
+                        "type": "string",
+                        "description": (
+                            "Natural-language question (mode='query'), or a symbol/node label "
+                            "(mode='affected')."
+                        ),
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": ["query", "affected"],
+                        "description": "'query' = BFS comprehension; 'affected' = reverse blast-radius.",
+                        "default": "query",
+                    },
+                    "budget": {
+                        "type": "integer",
+                        "description": "Max answer tokens for mode='query' (default 1500).",
+                        "default": 1500,
+                    },
+                    "depth": {
+                        "type": "integer",
+                        "description": "Reverse-traversal depth for mode='affected' (default 2).",
+                        "default": 2,
+                    },
                 },
             },
         ),
@@ -431,6 +541,8 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
     if name == "init_repo":
         result = await loop.run_in_executor(None, lambda: _init_repo(**arguments))
+    elif name == "query_repo":
+        result = await loop.run_in_executor(None, lambda: _query_repo(**arguments))
     elif name == "run_in_composer":
         # Serialize: never two orchestrate.sh subprocesses at once (shared .last-run-dir).
         async with _get_dispatch_lock():
