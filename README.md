@@ -152,6 +152,30 @@ opctl system reconcile   # check STATE.md claims against ground truth
 opctl settings-set MAX_ITERATIONS 5
 ```
 
+### Reading the metrics
+
+Run `opctl metrics` and read it **top-down — trust first, then reliability, then cost**:
+
+1. **Trust (§6.5)** — the reason the pipeline exists. *Overclaim* = the executor claimed
+   success but ground truth disagreed; the *visible→held-out gap* = fitting to the visible
+   tests; *reward-hacks* = overfits caught (scope + visible green, held-out red). High here
+   means the executor's narrative can't be trusted — exactly what held-out exists to catch.
+   `Work OK` is the harness's own honest verdict (tests **and** scope **and** held-out **and**
+   typecheck **and** lint), not the executor's claim.
+2. **Reliability (§3.2)** — timeout / bad-json / failed, counted *separately* so failed runs
+   never inflate the cost quantiles. A low `completed/N` explains gaps in the numbers below.
+3. **Cost & latency (§3)** — p50/p90/p95 over completed runs only. A `†` marks a
+   low-confidence quantile (sample below P90/P95 min-n) — an indicator, not a verdict; lean
+   on p50.
+4. **Opus window (§3)** — the orchestrator's own spend (the economic case). Rising
+   tokens/task or context-proxy chars mean Opus's context is bloating — split tasks and
+   checkpoint.
+
+Colors aren't decoration: **green** = healthy, **yellow** = watch, **red** = act
+("higher is better" and "lower is better" are coloured on their own scales). `opctl metrics
+classes` / `history` break the same signals down by task class and by day; `opctl metrics
+clear` resets the telemetry (archived first).
+
 ## How it works
 
 - **Orchestrate loop** (`harness/orchestrate.sh`) - dispatch → ground truth → verdict,
@@ -331,6 +355,29 @@ opctl metrics        # дашборд метрик
 opctl system reconcile   # сверить claims STATE.md с ground truth
 opctl settings-set MAX_ITERATIONS 5
 ```
+
+### Как читать метрики
+
+Запусти `opctl metrics` и читай **сверху вниз — сначала доверие, потом надёжность, потом стоимость**:
+
+1. **Доверие (§6.5)** — ради этого весь пайплайн. *Overclaim* = исполнитель заявил успех, а
+   ground truth не согласен; *разрыв visible→held-out* = подгонка под видимые тесты;
+   *reward-hacks* = пойманные overfit'ы (scope + visible зелёные, held-out красный). Высокие
+   значения = нарративу исполнителя верить нельзя — это и ловит held-out. `Work OK` — честный
+   вердикт харнесса (тесты **и** scope **и** held-out **и** typecheck **и** lint), а не
+   заявка исполнителя.
+2. **Надёжность (§3.2)** — timeout / bad-json / failed, считаются *отдельно*, чтобы сбои не
+   занижали квантили стоимости. Низкий `completed/N` объясняет дыры в числах ниже.
+3. **Стоимость и латентность (§3)** — p50/p90/p95 только по завершённым прогонам. Значок `†`
+   = low-confidence квантиль (выборка ниже порога P90/P95) — индикатор, не вердикт;
+   опирайся на p50.
+4. **Окно Opus (§3)** — расход самого оркестратора (экономический аргумент). Рост
+   tokens/task или context-proxy = контекст Opus пухнет — дроби задачи и чекпоинти.
+
+Цвета не косметика: **зелёный** = норма, **жёлтый** = присмотрись, **красный** = действуй
+(«выше лучше» и «ниже лучше» раскрашены по своим шкалам). `opctl metrics classes` / `history`
+дают те же сигналы по классам задач и по дням; `opctl metrics clear` сбрасывает телеметрию (с
+архивом).
 
 ## Как это работает
 

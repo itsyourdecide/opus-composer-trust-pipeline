@@ -41,7 +41,7 @@ bash harness/reconcile.sh        # 0 discrepancies once fixtures exist
      the ledger is runtime-local (gitignored), so a clone has none. Keep honest. -->
 ```json
 [
-  {"kind":"git","repo":".","grep":"Narrow slice"},
+  {"kind":"git","repo":".","grep":"Initial commit"},
   {"kind":"file","path":"harness/verdict.sh","contains":"block"},
   {"kind":"file","path":"harness/verdict.sh","contains":"lint failed"},
   {"kind":"file","path":"harness/ground-truth.sh","contains":"TYPECHECK_CMD"},
